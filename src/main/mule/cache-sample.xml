@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="c2f92dc0-987a-45ab-8418-afa976224ed3" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<ee:object-store-caching-strategy name="Caching_Strategy" doc:name="Caching Strategy" doc:id="2e7224ce-4b38-4c93-9b77-251884e346a9" keyGenerationExpression='#[attributes.headers."productid"]' objectStore="Cache_Object_store"/>
+	<os:object-store name="Cache_Object_store" doc:name="Object store" doc:id="89d4ca41-a689-4c47-b86b-4753ed1d6000" maxEntries="100" entryTtl="1" entryTtlUnit="HOURS" expirationInterval="10"/>
+	<flow name="no-cache-sampleFlow" doc:id="cb71aaf9-8dde-4a31-8463-b33532ffbf01" >
+		<http:listener doc:name="Listener" doc:id="2ca7c0d6-6e18-4128-8f84-03bfa56f6380" path="nocache" config-ref="HTTP_Listener_config"/>
+		<logger level="INFO" doc:name="Outside Cache Scope" doc:id="236b96e8-c698-48bb-9dc2-bcf93f6440c7" message="Outside  Cache Scope" />
+		<ee:transform doc:name="wait 5 sec" doc:id="88bf9a5a-a343-4978-b896-4462ed03219f">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+import * from dw::Runtime
+output application/json
+---
+{ 
+	"product id":  attributes.headers."productid",
+	"product desc": "product description"	
+} wait 5000]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+	</flow>
+	<flow name="cache-sampleFlow" doc:id="03ea9580-64f9-4a6a-aef1-1445374e9171" >
+		<http:listener doc:name="Listener" doc:id="8d46182f-3c37-4a86-8d7e-2254bfa3bde4" config-ref="HTTP_Listener_config" path="cache"/>
+		<ee:cache doc:name="Cache" doc:id="3fce436f-1763-4847-830f-acc0deb40662" cachingStrategy-ref="Caching_Strategy">
+			<logger level="INFO" doc:name="Inside Cache Scope" doc:id="6e77c2ee-25c1-429e-ac65-3550b2ebad40" message="Inside Cache Scope" />
+			<ee:transform doc:name="wait 5 sec" doc:id="08f623aa-90d7-4358-9006-c0d37081051e" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+import * from dw::Runtime
+output application/json
+---
+{ 
+	"product id":  attributes.headers."productid",
+	"product desc": "product description"	
+} wait 5000]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</ee:cache>
+	</flow>
+</mule>

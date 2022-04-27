@@ -1,0 +1,38 @@
+#%RAML 1.0
+title: cache-sample
+version: v1
+mediaType:  [ application/json ]
+protocols:
+  - HTTP
+  
+/nocache:
+  get:
+    displayName: get obj
+    description: get obj by productid
+    headers:
+      productid:
+          type: string
+          description: "productid"
+          example: "342343"
+          required: true
+    responses:
+      200:
+        description: Success repsonse of employee
+        body:
+          application/json:
+
+/cache:
+  get:
+    displayName: get cached obj
+    description: get cached obj by productid
+    headers:
+      productid:
+          type: string
+          description: "productid"
+          example: "342343"
+          required: true
+    responses:
+      200:
+        description: Success repsonse of employee
+        body:
+          application/json:
